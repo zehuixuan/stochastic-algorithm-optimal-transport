@@ -30,7 +30,7 @@ import sys
 
 
 
-def runSinkhorn(epsilon,C,p,q,n_it,n_target):
+def runSinkhorn(epsilon,C,p,q,n_it,n_sink,n_target):
     K = (np.diag(p).dot(np.exp(-C/epsilon))).dot(np.diag(q))
 
     b = np.ones(n_target)
@@ -65,7 +65,7 @@ def gradient_SAG(v_eps,epsilon,n_target, n_source, X_source,X_target,nu,idx,p):
         z = np.max(v_eps-np.sum(abs(X_target-X_source[idx,:])**p,axis=1)/epsilon)
         expv = nu * np.exp(v_eps-np.sum(abs(X_target-X_source[idx,:])**p,axis=1)/epsilon - z)
         if np.sum(expv) == 0:
-            print "simulate again"
+            print("simulate again")
     pi = expv/np.sum(expv)
     grad = - nu + pi
     return grad
@@ -158,8 +158,8 @@ def runBench(n_target, n_source, i_run, n_iter_comparaison, first = False, v_opt
 
     setting_name = "Semi-discrete D = "+str(D)+" - n_source = "+str(n_source)+" - n_target = "+str(n_target)
 
-    print setting_name
-    print '************************'
+    print (setting_name)
+    print ('************************')
 
 
     # continuous measure
@@ -272,7 +272,7 @@ def runBench(n_target, n_source, i_run, n_iter_comparaison, first = False, v_opt
     
 
 
-    print '************************'
+    print ('************************')
     return [v_opt_list]
 
 
@@ -318,7 +318,7 @@ arg = sys.argv[1]
 
 for i_run in range(nruns):
  
-    print "-------------    "+str(i_run)+"   ----------"
+    print ("-------------    "+str(i_run)+"   ----------")
 
     X_target = sample_rho_batch(rho_list_target,n_target)
 
