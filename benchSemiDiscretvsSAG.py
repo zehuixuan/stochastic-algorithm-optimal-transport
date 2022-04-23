@@ -22,6 +22,8 @@ from scipy.signal import convolve2d
 import pdb
 import sys
 
+from setting import *
+from utilsOT import *
 
 
 ################################################################################
@@ -111,8 +113,6 @@ def gradient(v_eps,epsilon,n_target,rho_list_source,X_target,nu):
         Y = sample_rho(rho_list_source)
         z = np.max(v_eps-np.sum((X_target-Y)**2,axis=1)/epsilon)
         expv = nu * np.exp(v_eps-np.sum((X_target-Y)**2,axis=1)/epsilon - z)
-        #if np.sum(expv) == 0:
-        #print "simulate again"
     pi = expv/np.sum(expv)
     grad = - nu + pi
     return grad
@@ -281,28 +281,10 @@ def runBench(n_target, n_source, i_run, n_iter_comparaison, first = False, v_opt
 #####################       Semidiscrete    ############################
 ########################################################################
 
-D = 3
 p = 2
 
-#np.random.seed(1)
-
-rho_list_source = []
-nrho = 3
-for i in range(nrho):
-    mu1 = np.random.rand(D)
-    sigma_tmp = np.random.rand(D,D)
-    sigma1 = 0.01 *((sigma_tmp.T + sigma_tmp)+ D * np.eye(D))
-    rho = multivariate_normal(mean = mu1,cov = sigma1)
-    rho_list_source.append(rho)
-
-rho_list_target = []
-nrho = 3
-for i in range(nrho):
-    mu1 = np.random.rand(D)
-    sigma_tmp = np.random.rand(D,D)
-    sigma1 = 0.01 *((sigma_tmp.T + sigma_tmp)+ D * np.eye(D))
-    rho = multivariate_normal(mean = mu1,cov = sigma1)
-    rho_list_target.append(rho)
+rho_list_source = generate_list_rho(n_rho=3)
+rho_list_target = generate_list_rho(n_rho=3)
 
 eps_list = [10**(-2)]
 n_eps = len(eps_list)
