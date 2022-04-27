@@ -31,7 +31,9 @@ def sample_rho(rho_list):
     sample = rho_list[idx].rvs()
     return sample
 
-def grad_h_eps(X_target,v,epsilon,nu,rho_list_source):
+####### gradients #######
+
+def grad_h_eps(v,rho_list_source,X_target,nu,epsilon):
     expv = np.zeros(n_target)
     while np.sum(expv) == 0:
         X_source = sample_rho(rho_list_source)
@@ -44,7 +46,7 @@ def grad_h_eps(X_target,v,epsilon,nu,rho_list_source):
     print(grad)
     return grad
 
-def grad_h_0(X_target,v,nu,rho_list_source,n_samples):
+def grad_h_0(v,rho_list_source,X_target,nu,n_samples):
     Xv = np.c_[X_target,np.sqrt(-v-np.min(-v))]
     kdTree = NearestNeighbors(n_neighbors=1, algorithm='ball_tree').fit(Xv)
     Y = sample_rho(rho_list_source)
@@ -59,6 +61,15 @@ def grad_h_0(X_target,v,nu,rho_list_source,n_samples):
     area_vect = area_vect/n_samples  
     grad = nu - area_vect 
     return grad
-
+ 
+def grad_SAG(v,X_source,idx,X_target,nu,epsilon):
+    expv = np.zeros(n_target)
+    while np.sum(expv) == 0:
+        c = np.sum(abs(X_target-X_source[idx,:])**2,axis=1)
+        z = (v-c)/epsilon
+        expv = nu * np.exp(z - np.max(z))
+    chi = expv/np.sum(expv)
+    grad = nu - chi
+    return grad
 
 

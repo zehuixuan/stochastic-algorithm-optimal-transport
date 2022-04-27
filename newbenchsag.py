@@ -1,11 +1,3 @@
-
-# coding: utf-8
-
-# In[1]:
-
-#from __future__ import division
-
-
 import numpy as np
 import time
 import random
@@ -22,8 +14,6 @@ from scipy.signal import convolve2d
 import pdb
 import sys
 
-from setting import *
-from utilsOT import *
 
 
 ################################################################################
@@ -32,13 +22,13 @@ from utilsOT import *
 
 
 
-def runSinkhorn(epsilon,C,p,q,n_it,n_sink,n_target):
+def runSinkhorn(epsilon,C,p,q,n_it,n_target):
     K = (np.diag(p).dot(np.exp(-C/epsilon))).dot(np.diag(q))
 
     b = np.ones(n_target)
     err_a = np.ones(n_it)
     err_b = np.ones(n_it)
-    u_list = np.ones([n_sink,n_it ])
+    u_list = np.ones([n_source,n_it ])
     v_list = np.ones([n_target,n_it])
 
 
@@ -49,12 +39,12 @@ def runSinkhorn(epsilon,C,p,q,n_it,n_sink,n_target):
         v = epsilon * np.log(b)
         u_list[:,i] = u
         v_list[:,i] = v
-                    
 
-   
+
+
     u = epsilon * np.log(a)
     v = epsilon * np.log(b)
-    
+
     return [u_list,v_list]
 
 # ## Regularized OT
@@ -67,7 +57,7 @@ def gradient_SAG(v_eps,epsilon,n_target, n_source, X_source,X_target,nu,idx,p):
         z = np.max(v_eps-np.sum(abs(X_target-X_source[idx,:])**p,axis=1)/epsilon)
         expv = nu * np.exp(v_eps-np.sum(abs(X_target-X_source[idx,:])**p,axis=1)/epsilon - z)
         if np.sum(expv) == 0:
-            print("simulate again")
+            print ("simulate again")
     pi = expv/np.sum(expv)
     grad = - nu + pi
     return grad
@@ -82,7 +72,7 @@ def runSAG (epsilon,nb_iter,n_target,n_source,X_target,X_source,nu,alpha) :
     grad_vect = np.zeros([n_target,n_source])
     grad_moy = np.zeros(n_target)
 
- 
+
     for i in range(nb_iter):
 
         if i<n_source:
@@ -113,6 +103,8 @@ def gradient(v_eps,epsilon,n_target,rho_list_source,X_target,nu):
         Y = sample_rho(rho_list_source)
         z = np.max(v_eps-np.sum((X_target-Y)**2,axis=1)/epsilon)
         expv = nu * np.exp(v_eps-np.sum((X_target-Y)**2,axis=1)/epsilon - z)
+        #if np.sum(expv) == 0:
+        #print "simulate again"
     pi = expv/np.sum(expv)
     grad = - nu + pi
     return grad
@@ -124,14 +116,14 @@ def runSGD (epsilon,nb_iter,n_target,rho_list_source,X_target,nu,alpha) :
 
     v_eps_bar = np.ones(n_target)
     v_eps = np.ones(n_target)
-        
+
     for i in range(nb_iter) :
         vlist[:,i] = epsilon * v_eps_bar
         step = alpha*(1./np.sqrt(i+1))
         grad = gradient(v_eps,epsilon,n_target,rho_list_source,X_target,nu)
         v_eps = v_eps - step*grad
         v_eps_bar = 1./(i+1)*(v_eps + i*v_eps_bar)
-      
+
     return vlist
 
 def sample_rho_batch(rho_list,nsamples):
@@ -141,7 +133,7 @@ def sample_rho_batch(rho_list,nsamples):
         rand = np.random.rand(1)
         idx = int(np.floor(nrho * rand))
         sample[i,:] = rho_list[idx].rvs()
-        
+
     return sample
 
 def sample_rho(rho_list):
@@ -164,7 +156,7 @@ def runBench(n_target, n_source, i_run, n_iter_comparaison, first = False, v_opt
 
     # continuous measure
 
-        
+
     # if D == 2 :
     #     x, y = np.mgrid[-0.3:1.3:0.01, -0.3:1.3:0.01]
     #     N = np.size(x)
@@ -178,7 +170,7 @@ def runBench(n_target, n_source, i_run, n_iter_comparaison, first = False, v_opt
     #     rho_vect = np.reshape(rho_mat,N)
     #     rho_vect = rho_vect/np.sum(rho_vect)
     #     grid_vect = np.reshape(grid_mat,[N,2])
-        
+
     # discrete measure
     # number of diracs
 
@@ -186,7 +178,7 @@ def runBench(n_target, n_source, i_run, n_iter_comparaison, first = False, v_opt
     nu = nu/np.sum(nu) # weights of diracs
 
     # sample of continuous measure for Sinkhorn
-     # number of diracs
+    # number of diracs
     X_source = sample_rho_batch(rho_list_source,n_source)  # coordinates of diracs
 
     mu = np.ones(n_source)
@@ -196,7 +188,7 @@ def runBench(n_target, n_source, i_run, n_iter_comparaison, first = False, v_opt
     # Run SAG
     n_it_SAG = n_iter_comparaison
 
-    
+
     n_alpha_SAG = 1
     v_SAG = np.zeros([n_target,n_it_SAG ,n_eps,n_alpha_SAG])
 
@@ -248,8 +240,8 @@ def runBench(n_target, n_source, i_run, n_iter_comparaison, first = False, v_opt
 
     err_SAG = np.zeros([n_size_err,n_eps,n_alpha_SAG])
 
-    
-    
+
+
     for a in range(n_eps):
         epsilon = eps_list[a]
         v_opt = v_opt_list[:,a] - np.mean(v_opt_list[:,a])
@@ -263,60 +255,70 @@ def runBench(n_target, n_source, i_run, n_iter_comparaison, first = False, v_opt
         a+=1
 
     if first :
-        filenameSGD = "/home/marco/temp/numpy_arrays/SemiDiscretvsSAG/err_SGD_SD"+'_run_'+str(i_run)+'_batch_'+str(arg)
+        filenameSGD = "err_SGD_SD"+'_run_'+str(i_run)+'_batch_'
         np.save(filenameSGD,err_SGD)
 
-    filename = "/home/marco/temp/numpy_arrays/SemiDiscretvsSAG/err_SAG_SD_"+str(n_source)+'_run_'+str(i_run)+'_batch_'+str(arg)
+    filename = "err_SAG_SD_"+str(n_source)+'_run_'+str(i_run)+'_batch_'
     np.save(filename,err_SAG)
 
-    
+
 
 
     print ('************************')
     return [v_opt_list]
 
 
-
+if __name__=="__main__":
 ########################################################################
 #####################       Semidiscrete    ############################
 ########################################################################
 
-p = 2
+    D = 3
+    p = 2
 
-rho_list_source = generate_list_rho(n_rho=3)
-rho_list_target = generate_list_rho(n_rho=3)
+    #np.random.seed(1)
 
-eps_list = [10**(-2)]
-n_eps = len(eps_list)
+    rho_list_source = []
+    nrho = 3
+    for i in range(nrho):
+        mu1 = np.random.rand(D)
+        sigma_tmp = np.random.rand(D,D)
+        sigma1 = 0.01 *((sigma_tmp.T + sigma_tmp)+ D * np.eye(D))
+        rho = multivariate_normal(mean = mu1,cov = sigma1)
+        rho_list_source.append(rho)
 
-n_target = 10
+    rho_list_target = []
+    nrho = 3
+    for i in range(nrho):
+        mu1 = np.random.rand(D)
+        sigma_tmp = np.random.rand(D,D)
+        sigma1 = 0.01 *((sigma_tmp.T + sigma_tmp)+ D * np.eye(D))
+        rho = multivariate_normal(mean = mu1,cov = sigma1)
+        rho_list_target.append(rho)
 
-n_iter_SGD_opt = 10**7
-n_iter_comparaison = 5*10**5
+    eps_list = [10**(-2)]
+    n_eps = len(eps_list)
 
-nruns = 5
+    n_target = 10
 
-arg = sys.argv[1]
+    n_iter_SGD_opt = 10**7
+    n_iter_comparaison = 5*10**5
 
-for i_run in range(nruns):
- 
-    print ("-------------    "+str(i_run)+"   ----------")
+    nruns = 5
 
-    X_target = sample_rho_batch(rho_list_target,n_target)
+    # arg = sys.argv[1]
 
-    n_source0 = 10**2
+    for i_run in range(nruns):
 
-    v_opt_SGD = runBench(n_target,n_source0, i_run, n_iter_comparaison, first = True, n_iter_SGD_opt = n_iter_SGD_opt)
+        print ("-------------    "+str(i_run)+"   ----------")
 
-    n_source_list = [10**3,10**4]
+        X_target = sample_rho_batch(rho_list_target,n_target)
 
-    for n_source in n_source_list :
-        runBench(n_target,n_source, i_run, n_iter_comparaison, v_opt_list = v_opt_SGD[0],n_iter_SGD_opt = n_iter_SGD_opt)
+        n_source0 = 10**2
 
+        v_opt_SGD = runBench(n_target,n_source0, i_run, n_iter_comparaison, first = True, n_iter_SGD_opt = n_iter_SGD_opt)
 
+        n_source_list = [10**3,10**4]
 
-
-
-
-
-
+        for n_source in n_source_list :
+            runBench(n_target,n_source, i_run, n_iter_comparaison, v_opt_list = v_opt_SGD[0],n_iter_SGD_opt = n_iter_SGD_opt)

@@ -1,65 +1,41 @@
 import numpy as np
+import matplotlib.pyplot as plt
 
 from setting import *
 from utilsOT import *
-
-# def gradient(v_eps,epsilon):
-#     expv = np.zeros(n_target)
-#     while np.sum(expv) == 0:
-#         Y = sample_rho(rho_list)
-#         z = np.max((v_eps-np.sum((X-Y)**2,axis=1))/epsilon)
-#         expv = nu * np.exp((v_eps-np.sum((X-Y)**2,axis=1))/epsilon - z)
-#         #z = np.max(v_eps-np.sum((X-Y)**2,axis=1)/epsilon)
-#         #expv = nu * np.exp(v_eps-np.sum((X-Y)**2,axis=1)/epsilon - z)
-#         #if np.sum(expv) == 0:
-#         #print "simulate again"
-#     pi = expv/np.sum(expv)
-#     grad = - nu + pi
-#     return grad
-
-
-def runSGD (epsilon,nb_iter) :
-    grad_type = "one sample "
-
-    alpha = .8
-    #alpha = 1./epsilon
-    n_eps = len(eps_list)
-
-
-    vlist = np.zeros([n_target,nb_iter])
-
-    v_eps_bar = np.ones(n_target)
-    v_eps = np.ones(n_target)
-    
-    t = time.time()
-    
-    for i in range(nb_iter) :
-        vlist[:,i] = v_eps_bar
-        #vlist[:,i] = epsilon * v_eps_bar
-        step = alpha*(1./np.sqrt(i+1))
-        grad = gradient(v_eps,epsilon)
-        v_eps = v_eps - step*grad
-        v_eps_bar = 1./(i+1)*(v_eps + i*v_eps_bar)
-        
-    tt = time.time()-t
-    
-    print ("epsilon = "+str(epsilon)+', time elapsed : '+str(tt))
-    return vlist
+from algos import *
 
 
 if __name__=="__main__":
     #########   SETTING    #########
     np.random.seed(3)
     
-    epsilon = 0.01
-    alpha = .5/epsilon
-    n_target = 10 
-    n_iter = 1000
+    n_iter = 100000
     
-    rho_list = generate_list_rho(n_rho=3)
-    rho_list_target = generate_list_rho(n_rho=3)
+    rho_list_source = generate_list_rho(3) 
+    rho_list_target = generate_list_rho(3)
 
     X_target = sample_rho_batch(rho_list_target,n_target)
+    nu = np.ones(n_target)
+    nu = nu/np.sum(nu) 
 
-    v_SGD = np.zeros([n_target,n_iter ,1,1])
-    v_SGD[:,:,0,0] = runSGD(epsilon,n_iter,n_target,rho_list_source,X_target,nu,alpha)
+    #########   Averaged SGD Non-regularizied   #########
+    # epsilon = 0
+    # alpha = 0.8
+    # n_iter = 10000
+    v_ASGD = np.zeros([n_target,n_iter ,1,1])
+    v_ASGD[:,:,0,0] = runASGD(nu,X_target,rho_list_source, epsilon=0, alpha = 0.8, n_iter=n_iter)
+
+    #########   SAG Regularized, Discretization of mu ,epsilon = 0.01   #########
+    # sample from continuous measure mu
+    X_source = sample_rho_batch(rho_list_source,n_source)
+    mu = np.ones(n_source)
+    mu = mu/np.sum(mu)
+
+    # epsilon = 0.0001
+    # alpha = 0.001
+    # n_iter = 100000
+    v_SAG = np.zeros([n_target,100000 ,1,1])
+    v_SAG[:,:,0,0] = runSAG(nu,mu,X_target,X_source,epsilon = 0.0001,alpha=0.001,n_iter=100000)
+
+

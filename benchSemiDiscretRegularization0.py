@@ -25,26 +25,27 @@ from algos import *
 
 
 
-def runBench(n_target, i_run, n_iter_comparaison, n_iter_SGD_opt):
-    vlist = runSGD(X_target,nu,rho_list_source,epsilon,n_iter_SGD_opt)
+def runBench(n_target, i_run, n_iter_comparaison, n_iter_ASGD_opt):
+    vlist = runASGD(X_target,nu,rho_list_source,epsilon,n_iter_ASGD_opt)
     v_opt = vlist[:,-1]
 
-    n_it_SGD = n_iter_comparaison
+    n_it_ASGD = n_iter_comparaison
 
-    v_SGD = np.zeros([n_target,n_it_SGD,n_eps])
+    v_ASGD = np.zeros([n_target,n_it_ASGD,n_eps])
+    alpha = 0.8
 
     for i in range(n_eps):
         epsilon = eps_list[i]
-        v_SGD[:,:,i] = runSGD(X_target,nu,rho_list_source,epsilon,n_it_SGD)
+        v_ASGD[:,:,i] = runASGD(X_target,nu,rho_list_source,epsilon,alpha,n_it_ASGD)
 
 
-    kmax = np.shape(v_SGD)[1]
+    kmax = np.shape(v_ASGD)[1]
     lmax = np.shape(vlist)[1]
 
     n_size_err = min(kmax,lmax)
 
 
-    err_SGD = np.zeros([n_size_err,n_eps])
+    err_ASGD = np.zeros([n_size_err,n_eps])
     err_v = np.zeros(n_size_err)
 
     for l in range(n_size_err):
@@ -53,15 +54,15 @@ def runBench(n_target, i_run, n_iter_comparaison, n_iter_SGD_opt):
     for i in range(n_eps):
         epsilon = eps_list[i]
         for k in range(n_size_err):
-            err_SGD[k,i] = np.linalg.norm(v_SGD[:,k,i]- np.mean(v_SGD[:,k,i]) - v_opt + np.mean(v_opt))/np.linalg.norm(v_opt-np.mean(v_opt))
+            err_ASGD[k,i] = np.linalg.norm(v_ASGD[:,k,i]- np.mean(v_ASGD[:,k,i]) - v_opt + np.mean(v_opt))/np.linalg.norm(v_opt-np.mean(v_opt))
 
 
-    filename_reg = "/home/marco/temp/numpy_arrays/SemiDiscretRegularization/err_SGD_unreg_"+str(i_run)+'_batch_'+str(arg)
+    filename_reg = "/home/marco/temp/numpy_arrays/SemiDiscretRegularization/err_ASGD_unreg_"+str(i_run)+'_batch_'+str(arg)
     np.save(filename_reg,err_v)
 
    
-    filename = "/home/marco/temp/numpy_arrays/SemiDiscretRegularization/err_SGD_all_eps_"+str(i_run)+'_batch_'+str(arg)
-    np.save(filename,err_SGD)
+    filename = "/home/marco/temp/numpy_arrays/SemiDiscretRegularization/err_ASGD_all_eps_"+str(i_run)+'_batch_'+str(arg)
+    np.save(filename,err_ASGD)
 
 
 if __name__=="__main__":
@@ -88,7 +89,7 @@ if __name__=="__main__":
 
 
 
-    n_iter_SGD_opt = 10**7
+    n_iter_ASGD_opt = 10**7
     n_iter_comparaison = 5*10**5
 
     nruns = 5
@@ -102,7 +103,7 @@ if __name__=="__main__":
         # X_target = sample_rho_batch(rho_list_target,n_target)
 
     
-        runBench(n_target, i_run, n_iter_comparaison, n_iter_SGD_opt)
+        runBench(n_target, i_run, n_iter_comparaison, n_iter_ASGD_opt)
 
 
 
