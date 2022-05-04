@@ -1,11 +1,10 @@
-from setting import *
 import numpy as np
 from scipy.stats import multivariate_normal
 from sklearn.neighbors import NearestNeighbors
 
 ####### gaussian mixture & samples #######
 
-def generate_list_rho(n_rho = 3):
+def generate_list_rho(n_rho = 3, D = 3):
     rho_list = []
     for i in range(n_rho):
         mu1 = np.random.rand(D)
@@ -15,7 +14,7 @@ def generate_list_rho(n_rho = 3):
         rho_list.append(rho)
     return rho_list
 
-def sample_rho_batch(rho_list,nsamples):
+def sample_rho_batch(rho_list, nsamples, D=3):
     sample = np.zeros([nsamples,D])
     n_rho = len(rho_list)
     for i in range(nsamples):
@@ -33,43 +32,47 @@ def sample_rho(rho_list):
 
 ####### gradients #######
 
-def grad_h_eps(v,rho_list_source,X_target,nu,epsilon):
-    expv = np.zeros(n_target)
-    while np.sum(expv) == 0:
-        X_source = sample_rho(rho_list_source)
-        c = np.sum((X_target-X_source)**2,axis=1)
-        z = (v-c)/epsilon
-        expv = nu * np.exp(z - np.max(z))  
-        print(expv)     
-    chi = expv/np.sum(expv)
-    grad = nu - chi
-    print(grad)
-    return grad
-
-def grad_h_0(v,rho_list_source,X_target,nu,n_samples):
+def grad_h_0(v,X_source,X_target,nu):
+    n_target = len(X_target)
     Xv = np.c_[X_target,np.sqrt(-v-np.min(-v))]
     kdTree = NearestNeighbors(n_neighbors=1, algorithm='ball_tree').fit(Xv)
-    Y = sample_rho(rho_list_source)
-    if n_samples == 1:
-        Yv = np.reshape(np.hstack([Y,0]),[1,-1])
-    else:
-        Yv = np.c_[Y,np.zeros(n_samples)]
+    Y = X_source
+    Yv = np.reshape(np.hstack([Y,0]),[1,-1])
     neighbors = kdTree.kneighbors(Yv,n_neighbors=1,return_distance=False)
     area_vect = np.zeros(n_target)
-    for i in range(n_samples):
-          area_vect[neighbors[i]] += 1
-    area_vect = area_vect/n_samples  
+    area_vect[neighbors[0]] += 1
     grad = nu - area_vect 
     return grad
- 
-def grad_SAG(v,X_source,idx,X_target,nu,epsilon):
+
+def grad_h_eps(v,X_source,X_target,nu,epsilon):
+    n_target = len(X_target)
     expv = np.zeros(n_target)
-    while np.sum(expv) == 0:
-        c = np.sum(abs(X_target-X_source[idx,:])**2,axis=1)
-        z = (v-c)/epsilon
-        expv = nu * np.exp(z - np.max(z))
+
+    c = np.sum(np.abs(X_target-X_source)**2,axis=1)
+    z = (v-c)/epsilon
+    expv = nu * np.exp(z - np.max(z))  
+
     chi = expv/np.sum(expv)
     grad = nu - chi
     return grad
 
+def h_eps(v,X_source,X_target,nu,epsilon):
+    part1 = np.sum(v*nu)
+    c = np.sum(np.abs(X_target-X_source)**2,axis=1)
+    if epsilon == 0:
+        part2 = np.min(c - v)
+    else:
+        z = (v-c)/epsilon
+        expv = nu * np.exp(z - np.max(z))
+        part2 = - epsilon * (np.log(np.sum(expv)) + np.max(z)) - epsilon
+    h = part1 + part2
+    return h
+
+def W_sd(v,X_source,X_target,mu,nu,epsilon):
+    n_source = len(X_source)
+    h = np.zeros(n_source)
+    for i in range(n_source):
+        h[i] = h_eps(v,X_source[i],X_target,nu,epsilon)
+    W = np.sum(h * mu)
+    return W
 
