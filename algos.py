@@ -112,3 +112,39 @@ def runLP(nu,mu,X_target,X_source):
     P = res.x
     W = np.sum(C*P)
     return P.reshape(n_source,n_target), W
+
+
+def calculate_W_list_SAG (nu,mu,X_target,X_source,epsilon,alpha,n_iter) :
+    n_target = len(X_target)
+    n_source = len(X_source)
+    
+    W_list = np.zeros([n_iter//100])
+    
+    v = np.zeros(n_target)
+    grad_vect = np.zeros([n_target,n_source])
+    grad_moy = np.zeros(n_target)
+    sum_mu = 0
+ 
+    for i in range(n_iter):
+
+        if i<n_source:
+            idx = i
+            sum_mu += mu[idx]
+        else :
+            idx = np.random.choice(range(n_source))
+            sum_mu = 1
+        
+        if i % 100 == 0:
+            W_list[i//100] = W_sd(v,X_source,X_target,mu,nu,epsilon)
+
+        grad_moy = grad_moy - grad_vect[:,idx]
+        X_source_idx = X_source[idx,:]
+        if epsilon == 0:  
+            grad_idx = mu[idx] * grad_h_0(v,X_source_idx,X_target,nu)
+        else:
+            grad_idx = mu[idx] * grad_h_eps(v,X_source_idx,X_target,nu,epsilon)
+        grad_vect[:,idx] = grad_idx
+        grad_moy = grad_moy + grad_idx
+        v = v + alpha / sum_mu * grad_moy
+
+    return W_list
