@@ -134,8 +134,8 @@ def calculate_W_list_SAG (nu,mu,X_target,X_source,epsilon,alpha,n_iter) :
             idx = np.random.choice(range(n_source))
             sum_mu = 1
         
-        if i % 100 == 0:
-            W_list[i//100] = W_sd(v,X_source,X_target,mu,nu,epsilon)
+        if (i+1) % 100 == 0:
+            W_list[((i+1)//100)-1] = W_sd(v,X_source,X_target,mu,nu,epsilon)
 
         grad_moy = grad_moy - grad_vect[:,idx]
         X_source_idx = X_source[idx,:]
